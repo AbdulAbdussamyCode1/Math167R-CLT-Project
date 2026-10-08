@@ -1,0 +1,144 @@
+---
+title: "CLT Project 1: Six Sided Die"
+author: "Abdulwahab Abdussamy"
+format:
+  html:
+    toc: true
+    code-fold: true
+    theme: cosmo
+execute:
+  warning: false
+  message: false
+---
+
+## Overview
+
+The Six Sided Die represents a discrete uniform distribution. Unlike the Standard Normal, this population is not bell-shaped — it has exactly six equally likely outcomes (1 through 6). However it is symmetric, which means we expect the CLT to kick in relatively quickly compared to skewed distributions.
+
+## Setup
+
+```{r}
+#| label: setup
+
+set.seed(1278)
+B <- 10000
+library(moments)
+```
+
+## 1. What Does the Population Look Like?
+
+```{r}
+#| label: population-plot
+
+barplot(rep(1/6, 6), names.arg = 1:6,
+        col = "steelblue", border = "white",
+        main = "Six Sided Die Population",
+        xlab = "Outcome", ylab = "Probability")
+```
+
+The Six Sided Die has six equally likely outcomes. It is discrete and uniform — every value between 1 and 6 has exactly a 1/6 chance of occurring.
+
+**Theoretical mean:** (1+2+3+4+5+6)/6 = 3.5\
+**Theoretical standard deviation:** sqrt(35/12) ≈ 1.708
+
+## 2. My Prediction
+
+Since this distribution is symmetric (just not normal), I expect the CLT to work fairly quickly — probably around n = 10 to 20. The symmetry means there is no skew to overcome, so the sampling distribution should approach normality faster than skewed distributions like the Exponential.
+
+## 3. Monte Carlo Simulation
+
+```{r}
+#| label: simulation
+
+n_values <- c(1, 2, 5, 10, 20, 30, 50, 100)
+
+results <- data.frame(
+  n              = n_values,
+  simulated_mean = NA,
+  simulated_sd   = NA,
+  theoretical_se = NA,
+  skewness       = NA,
+  kurtosis       = NA
+)
+
+for (i in seq_along(n_values)) {
+  n <- n_values[i]
+  sample_means <- replicate(B, mean(sample(1:6, size = n, replace = TRUE)))
+  
+  results$simulated_mean[i] <- mean(sample_means)
+  results$simulated_sd[i]   <- sd(sample_means)
+  results$theoretical_se[i] <- sqrt(35/12) / sqrt(n)
+  results$skewness[i]       <- skewness(sample_means)
+  results$kurtosis[i]       <- kurtosis(sample_means)
+}
+```
+
+## 4. Results Table
+
+```{r}
+#| label: results-table
+
+round(results, 4)
+```
+
+## 5. Histograms Across Sample Sizes
+
+```{r}
+#| label: histograms
+#| fig-height: 10
+
+par(mfrow = c(4, 2))
+
+for (i in seq_along(n_values)) {
+  n <- n_values[i]
+  sample_means <- replicate(B, mean(sample(1:6, size = n, replace = TRUE)))
+  
+  hist(sample_means, breaks = 50, probability = TRUE,
+       main = paste("n =", n),
+       xlab = "Sample Mean", col = "steelblue", border = "white")
+  
+  curve(dnorm(x, mean = 3.5, sd = sqrt(35/12) / sqrt(n)),
+        add = TRUE, col = "red", lwd = 2)
+}
+
+par(mfrow = c(1, 1))
+```
+
+## 6. Q-Q Plots Across Sample Sizes
+
+```{r}
+#| label: qqplots
+#| fig-height: 10
+
+par(mfrow = c(4, 2))
+
+for (i in seq_along(n_values)) {
+  n <- n_values[i]
+  sample_means <- replicate(B, mean(sample(1:6, size = n, replace = TRUE)))
+  
+  qqnorm(sample_means, main = paste("Q-Q Plot: n =", n),
+         col = "steelblue", pch = 20, cex = 0.3)
+  qqline(sample_means, col = "red", lwd = 2)
+}
+
+par(mfrow = c(1, 1))
+```
+
+## 7. Conclusion
+
+The Six Sided Die sampling distribution converges to normality fairly quickly due to its symmetry. Even though the population is discrete and non-normal, the averaging process smooths things out rapidly.
+
+**My "normal enough" standard:**
+
+- Histogram is visually bell-shaped and symmetric
+- Q-Q plot points fall close to the reference line with no systematic curves
+- Skewness is between -0.5 and 0.5
+- Kurtosis is close to 3
+
+**Answer for Six Sided Die:** $$\boxed{n = 10}$$
+
+By n = 10 the histogram is clearly bell-shaped, the Q-Q plot is approximately linear, and skewness is close to zero. The symmetry of the original distribution means the CLT kicks in much faster than it would for a skewed population.
+
+## 8. What Surprised Me
+
+Even at n = 2, the distribution of sample means already starts losing its uniform shape and showing a triangular bump in the middle. This makes sense — when you average two dice rolls, extreme values (both 1s or both 6s) become less likely than middle values. The CLT is already working at just n = 2, which was faster than I expected for a non-normal population.
