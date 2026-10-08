@@ -1,0 +1,144 @@
+---
+title: "CLT Project 1: Exponential Distribution"
+author: "Abdulwahab Abdussamy"
+format:
+  html:
+    toc: true
+    code-fold: true
+    theme: cosmo
+execute:
+  warning: false
+  message: false
+---
+
+## Overview
+
+The Exponential distribution is our first skewed population. Unlike the Standard Normal and Six Sided Die, this distribution has a strong right skew — most values are small but occasionally very large values occur. This means the CLT will need a larger sample size to overcome the skewness and produce a normal-looking sampling distribution.
+
+## Setup
+
+```{r}
+#| label: setup
+
+set.seed(1278)
+B <- 10000
+library(moments)
+```
+
+## 1. What Does the Population Look Like?
+
+```{r}
+#| label: population-plot
+
+x <- seq(0, 8, length.out = 1000)
+plot(x, dexp(x, rate = 1), type = "l", lwd = 2, col = "steelblue",
+     main = "Exponential Population (lambda = 1)",
+     xlab = "x", ylab = "Density")
+```
+
+The Exponential distribution is strongly right skewed. Most values cluster near zero but the tail extends far to the right. This is the opposite of what a normal distribution looks like.
+
+**Theoretical mean:** 1/lambda = 1\
+**Theoretical standard deviation:** 1/lambda = 1
+
+## 2. My Prediction
+
+Because this distribution is strongly right skewed I expect the CLT to take longer to work than it did for the Normal or Six Sided Die. I predict the sampling distribution will still look skewed at small sample sizes like n = 5 or n = 10, and will only start looking approximately normal somewhere around n = 30 to 50.
+
+## 3. Monte Carlo Simulation
+
+```{r}
+#| label: simulation
+
+n_values <- c(1, 2, 5, 10, 20, 30, 50, 100)
+
+results <- data.frame(
+  n              = n_values,
+  simulated_mean = NA,
+  simulated_sd   = NA,
+  theoretical_se = NA,
+  skewness       = NA,
+  kurtosis       = NA
+)
+
+for (i in seq_along(n_values)) {
+  n <- n_values[i]
+  sample_means <- replicate(B, mean(rexp(n, rate = 1)))
+  
+  results$simulated_mean[i] <- mean(sample_means)
+  results$simulated_sd[i]   <- sd(sample_means)
+  results$theoretical_se[i] <- 1 / sqrt(n)
+  results$skewness[i]       <- skewness(sample_means)
+  results$kurtosis[i]       <- kurtosis(sample_means)
+}
+```
+
+## 4. Results Table
+
+```{r}
+#| label: results-table
+
+round(results, 4)
+```
+
+## 5. Histograms Across Sample Sizes
+
+```{r}
+#| label: histograms
+#| fig-height: 10
+
+par(mfrow = c(4, 2))
+
+for (i in seq_along(n_values)) {
+  n <- n_values[i]
+  sample_means <- replicate(B, mean(rexp(n, rate = 1)))
+  
+  hist(sample_means, breaks = 50, probability = TRUE,
+       main = paste("n =", n),
+       xlab = "Sample Mean", col = "steelblue", border = "white")
+  
+  curve(dnorm(x, mean = 1, sd = 1 / sqrt(n)),
+        add = TRUE, col = "red", lwd = 2)
+}
+
+par(mfrow = c(1, 1))
+```
+
+## 6. Q-Q Plots Across Sample Sizes
+
+```{r}
+#| label: qqplots
+#| fig-height: 10
+
+par(mfrow = c(4, 2))
+
+for (i in seq_along(n_values)) {
+  n <- n_values[i]
+  sample_means <- replicate(B, mean(rexp(n, rate = 1)))
+  
+  qqnorm(sample_means, main = paste("Q-Q Plot: n =", n),
+         col = "steelblue", pch = 20, cex = 0.3)
+  qqline(sample_means, col = "red", lwd = 2)
+}
+
+par(mfrow = c(1, 1))
+```
+
+## 7. Conclusion
+
+The Exponential distribution clearly shows the CLT working gradually. At small sample sizes like n = 1 and n = 2 the sampling distribution is visibly right skewed, matching the shape of the population. As n increases the skewness decreases and the distribution becomes more symmetric and bell shaped.
+
+**My "normal enough" standard:**
+
+- Histogram is visually bell-shaped and symmetric
+- Q-Q plot points fall close to the reference line with no systematic curves
+- Skewness is between -0.5 and 0.5
+- Kurtosis is close to 3
+
+**Answer for Exponential:** $$\boxed{n = 30}$$
+
+By n = 30 the histogram is approximately bell shaped, the Q-Q plot is nearly linear, and skewness has dropped close to zero. This is notably larger than what was needed for the Standard Normal or Six Sided Die, which makes sense given the strong right skew of the Exponential population.
+
+## 8. What Surprised Me
+
+The most striking thing is how visible the transition is. At n = 5 the distribution still looks clearly skewed, but by n = 20 it is already starting to look bell shaped. Watching the red normal curve gradually align with the histogram across sample sizes makes the CLT feel real rather than just a theoretical result. The n = 30 rule of thumb actually holds reasonably well here, which was not guaranteed given how skewed the Exponential population is.
