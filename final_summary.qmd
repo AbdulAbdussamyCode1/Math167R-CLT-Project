@@ -41,22 +41,45 @@ library(moments)
 ```{r}
 #| label: final-table
 
+set.seed(1278)
+B <- 10000
+
+# Function to compute stats from a vector of sample means
+get_stats <- function(means) {
+  c(skewness = round(skewness(means), 4),
+    kurtosis = round(kurtosis(means), 4))
+}
+
+# Run simulations at the chosen n for each distribution
+normal_stats <- get_stats(replicate(B, mean(rnorm(1))))
+die_stats    <- get_stats(replicate(B, mean(sample(1:6, 10, replace = TRUE))))
+exp_stats    <- get_stats(replicate(B, mean(rexp(30, rate = 1))))
+binom_stats  <- get_stats(replicate(B, mean(rbinom(100, size = 5, prob = 0.10))))
+
 results <- data.frame(
-  Distribution = c("Standard Normal", "Six Sided Die", "Exponential", 
+  Distribution = c("Standard Normal", "Six Sided Die", "Exponential",
                    "Binomial Small", "Cauchy"),
-  
-  Population_Shape = c("Symmetric, bell-shaped", 
+
+  Population_Shape = c("Symmetric, bell-shaped",
                        "Symmetric, discrete uniform",
                        "Strong right skew",
                        "Extreme right skew, discrete",
                        "Symmetric, infinite variance"),
-  
+
   Smallest_n = c("1", "10", "30", "100", "Never"),
-  
-  Skewness_at_n = c("~0.00", "~0.00", "~0.20", "~0.30", "undefined"),
-  
-  Kurtosis_at_n = c("~3.00", "~3.00", "~3.10", "~3.20", "undefined"),
-  
+
+  Skewness_at_n = c(normal_stats["skewness"],
+                    die_stats["skewness"],
+                    exp_stats["skewness"],
+                    binom_stats["skewness"],
+                    "undefined"),
+
+  Kurtosis_at_n = c(normal_stats["kurtosis"],
+                    die_stats["kurtosis"],
+                    exp_stats["kurtosis"],
+                    binom_stats["kurtosis"],
+                    "undefined"),
+
   Key_Observation = c(
     "Already normal — CLT not needed",
     "Symmetry helps CLT converge quickly",
@@ -66,9 +89,9 @@ results <- data.frame(
   )
 )
 
-knitr::kable(results, 
-             col.names = c("Distribution", "Population Shape", 
-                           "Smallest n", "Skewness at n", 
+knitr::kable(results,
+             col.names = c("Distribution", "Population Shape",
+                           "Smallest n", "Skewness at n",
                            "Kurtosis at n", "Key Observation"),
              caption = "Summary of CLT Convergence Across Distributions")
 ```
@@ -104,7 +127,7 @@ lines(n_values, abs(skew_exp),   type = "b", col = "tomato",    lwd = 2, pch = 1
 lines(n_values, abs(skew_binom), type = "b", col = "purple",    lwd = 2, pch = 16)
 abline(h = 0.5, lty = 2, col = "gray")
 abline(v = 30,  lty = 2, col = "black")
-legend("topright", 
+legend("topright",
        legend = c("Normal", "Six Sided Die", "Exponential", "Binomial Small"),
        col = c("steelblue", "darkgreen", "tomato", "purple"),
        lwd = 2, pch = 16)
