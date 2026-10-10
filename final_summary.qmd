@@ -64,7 +64,7 @@ results <- data.frame(
                        "Symmetric, discrete uniform",
                        "Strong right skew",
                        "Extreme right skew, discrete",
-                       "Symmetric, infinite variance"),
+                       "Symmetric, undefined mean and variance"),
 
   Smallest_n = c("1", "10", "30", "100", "Never"),
 
@@ -85,7 +85,7 @@ results <- data.frame(
     "Symmetry helps CLT converge quickly",
     "n=30 rule holds but barely",
     "n=30 rule clearly fails",
-    "CLT breaks down — infinite variance"
+    "CLT breaks down — mean and variance are undefined"
   )
 )
 
@@ -171,7 +171,7 @@ The CLT relies on three key assumptions:
 2.  **Identical distribution** — all observations come from the same distribution
 3.  **Finite variance** — the population has a finite variance
 
-The Cauchy distribution violates assumption 3. Its tails are so heavy that variance is infinite. The consequence is dramatic — no matter how large n gets, the sampling distribution of the mean never converges to normality. Extreme outliers continue to dominate the sample mean and prevent convergence.
+The Cauchy distribution violates the finite-variance requirement of the CLT. More fundamentally, the ordinary Cauchy distribution has no finite mean and no finite variance. Therefore, no matter how large n becomes, the sampling distribution of the sample mean does not converge to a normal distribution. Extreme observations continue to dominate the sample mean and keep it highly unstable.
 
 This is not just a theoretical curiosity. It is a practical warning that statistical rules of thumb always come with assumptions, and blindly applying the n = 30 rule without checking those assumptions can lead to seriously wrong conclusions.
 
