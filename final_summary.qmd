@@ -1,0 +1,165 @@
+---
+title: "CLT Project 1: Final Summary"
+author: "Abdulwahab Abdussamy"
+format:
+  html:
+    toc: true
+    code-fold: true
+    theme: cosmo
+execute:
+  warning: false
+  message: false
+---
+
+## Overview
+
+This document summarizes the findings from my Monte Carlo investigation of the Central Limit Theorem (CLT) across five different population distributions. For each distribution I investigated how quickly the sampling distribution of the sample mean approaches normality as the sample size n increases.
+
+## My "Normal Enough" Standard
+
+Before presenting results I want to clearly state the standard I used consistently across all distributions to decide when a sampling distribution was "approximately normal":
+
+- The histogram is visually bell-shaped and symmetric
+- The Q-Q plot points fall close to the reference line with no systematic curves
+- Skewness is between -0.5 and 0.5
+- Kurtosis is close to 3
+
+I applied this same standard to every distribution so that my conclusions are consistent and comparable.
+
+## Setup
+
+```{r}
+#| label: setup
+
+set.seed(1278)
+B <- 10000
+library(moments)
+```
+
+## Final Results Table
+
+```{r}
+#| label: final-table
+
+results <- data.frame(
+  Distribution = c("Standard Normal", "Six Sided Die", "Exponential", 
+                   "Binomial Small", "Cauchy"),
+  
+  Population_Shape = c("Symmetric, bell-shaped", 
+                       "Symmetric, discrete uniform",
+                       "Strong right skew",
+                       "Extreme right skew, discrete",
+                       "Symmetric, infinite variance"),
+  
+  Smallest_n = c("1", "10", "30", "100", "Never"),
+  
+  Skewness_at_n = c("~0.00", "~0.00", "~0.20", "~0.30", "undefined"),
+  
+  Kurtosis_at_n = c("~3.00", "~3.00", "~3.10", "~3.20", "undefined"),
+  
+  Key_Observation = c(
+    "Already normal — CLT not needed",
+    "Symmetry helps CLT converge quickly",
+    "n=30 rule holds but barely",
+    "n=30 rule clearly fails",
+    "CLT breaks down — infinite variance"
+  )
+)
+
+knitr::kable(results, 
+             col.names = c("Distribution", "Population Shape", 
+                           "Smallest n", "Skewness at n", 
+                           "Kurtosis at n", "Key Observation"),
+             caption = "Summary of CLT Convergence Across Distributions")
+```
+
+## Cross Distribution Visualizations
+
+```{r}
+#| label: convergence-comparison
+#| fig-height: 8
+
+n_values <- c(1, 2, 5, 10, 20, 30, 50, 100)
+
+# Calculate skewness across n for each distribution
+skew_normal  <- numeric(length(n_values))
+skew_die     <- numeric(length(n_values))
+skew_exp     <- numeric(length(n_values))
+skew_binom   <- numeric(length(n_values))
+
+for (i in seq_along(n_values)) {
+  n <- n_values[i]
+  skew_normal[i] <- skewness(replicate(B, mean(rnorm(n))))
+  skew_die[i]    <- skewness(replicate(B, mean(sample(1:6, n, replace = TRUE))))
+  skew_exp[i]    <- skewness(replicate(B, mean(rexp(n, rate = 1))))
+  skew_binom[i]  <- skewness(replicate(B, mean(rbinom(n, size = 5, prob = 0.10))))
+}
+
+plot(n_values, abs(skew_normal), type = "b", col = "steelblue", lwd = 2,
+     ylim = c(0, 2), xlab = "Sample Size (n)", ylab = "Absolute Skewness",
+     main = "How Quickly Does Skewness Drop to Zero?",
+     pch = 16)
+lines(n_values, abs(skew_die),   type = "b", col = "darkgreen", lwd = 2, pch = 16)
+lines(n_values, abs(skew_exp),   type = "b", col = "tomato",    lwd = 2, pch = 16)
+lines(n_values, abs(skew_binom), type = "b", col = "purple",    lwd = 2, pch = 16)
+abline(h = 0.5, lty = 2, col = "gray")
+abline(v = 30,  lty = 2, col = "black")
+legend("topright", 
+       legend = c("Normal", "Six Sided Die", "Exponential", "Binomial Small"),
+       col = c("steelblue", "darkgreen", "tomato", "purple"),
+       lwd = 2, pch = 16)
+text(32, 1.8, "n = 30", cex = 0.8)
+text(50, 0.55, "skewness = 0.5 threshold", cex = 0.8)
+```
+
+This plot shows how quickly the absolute skewness of the sampling distribution drops toward zero for each distribution. The Standard Normal and Six Sided Die converge almost immediately. The Exponential takes longer. The Binomial Small is the slowest of all. The Cauchy is excluded because its skewness is undefined.
+
+## Question 1: Is n = 30 a Universal Rule?
+
+Based on my investigation, **no — n = 30 is not a universal rule.**
+
+The answer depends heavily on the shape of the population:
+
+- For the **Standard Normal** the CLT works at n = 1 because the population is already normal
+- For the **Six Sided Die** n = 10 is sufficient because the population is symmetric
+- For the **Exponential** n = 30 works but just barely — the skewness is still detectable
+- For the **Binomial Small** n = 30 clearly fails — you need closer to n = 100
+- For the **Cauchy** no value of n works at all
+
+The n = 30 rule is a reasonable starting point for mildly skewed distributions but it breaks down for highly skewed or heavy tailed populations.
+
+## Question 2: Which Populations Converged Fastest and Slowest?
+
+**Fastest:** Standard Normal — already normal at n = 1, no convergence needed
+
+**Second fastest:** Six Sided Die — symmetric population means no skew to overcome, converges by n = 10
+
+**Middle:** Exponential — right skewed but CLT still applies, converges around n = 30
+
+**Slowest (among those where CLT applies):** Binomial Small — extreme skew and discreteness slow convergence significantly, needs n = 100
+
+**Does not converge:** Cauchy — CLT fails entirely due to infinite variance
+
+## Question 3: What Happens When CLT Assumptions Break Down?
+
+The CLT relies on three key assumptions:
+
+1.  **Independence** — observations are independent of each other
+2.  **Identical distribution** — all observations come from the same distribution
+3.  **Finite variance** — the population has a finite variance
+
+The Cauchy distribution violates assumption 3. Its tails are so heavy that variance is infinite. The consequence is dramatic — no matter how large n gets, the sampling distribution of the mean never converges to normality. Extreme outliers continue to dominate the sample mean and prevent convergence.
+
+This is not just a theoretical curiosity. It is a practical warning that statistical rules of thumb always come with assumptions, and blindly applying the n = 30 rule without checking those assumptions can lead to seriously wrong conclusions.
+
+## Overall Conclusion
+
+The Central Limit Theorem is one of the most powerful results in statistics, but it is not magic. It works gradually, it works faster for some populations than others, and it fails entirely when its assumptions are violated.
+
+The key takeaways from this investigation are:
+
+- The n = 30 rule is a rough guideline, not a universal law
+- Symmetric populations converge faster than skewed ones
+- Discrete populations can take longer to converge due to lingering lumpiness
+- Heavy tailed populations with infinite variance break the CLT entirely
+- Always check your assumptions before applying the CLT
