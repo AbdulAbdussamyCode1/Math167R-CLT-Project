@@ -1,0 +1,175 @@
+---
+title: "CLT Project 1: Cauchy Distribution"
+author: "Abdulwahab Abdussamy"
+format:
+  html:
+    toc: true
+    code-fold: true
+    theme: cosmo
+execute:
+  warning: false
+  message: false
+---
+
+## Overview
+
+The Cauchy distribution is the most unusual population we investigate. Unlike all the other distributions in this project, the Cauchy has no finite mean and no finite variance. This means the ordinary CLT does not apply. No matter how large the sample size gets, the sampling distribution of the mean never settles into a normal shape. This is a case where a fundamental assumption of the CLT is violated.
+
+## Setup
+
+```{r}
+#| label: setup
+
+set.seed(1278)
+B <- 10000
+library(moments)
+```
+
+## 1. What Does the Population Look Like?
+
+```{r}
+#| label: population-plot
+
+x <- seq(-10, 10, length.out = 1000)
+plot(x, dcauchy(x, location = 0, scale = 1), type = "l", lwd = 2, col = "steelblue",
+     main = "Cauchy Population (location=0, scale=1)",
+     xlab = "x", ylab = "Density")
+```
+
+The Cauchy distribution looks somewhat like a normal distribution but with much heavier tails. Extreme values occur far more frequently than a normal distribution would predict. Crucially it has no finite mean and no finite variance — these quantities do not exist for the Cauchy distribution.
+
+**Theoretical mean:** undefined\
+**Theoretical standard deviation:** undefined
+
+## 2. My Prediction
+
+Since the Cauchy has no finite variance the CLT does not apply. I predict that no matter how large n gets, the sampling distribution of the mean will never look approximately normal. Instead it will continue to show extreme outliers and heavy tails regardless of sample size.
+
+## 3. Monte Carlo Simulation
+
+```{r}
+#| label: simulation
+
+n_values <- c(1, 2, 5, 10, 20, 30, 50, 100, 500, 1000)
+
+results <- data.frame(
+  n              = n_values,
+  simulated_mean = NA,
+  simulated_sd   = NA,
+  skewness       = NA,
+  kurtosis       = NA
+)
+
+for (i in seq_along(n_values)) {
+  n <- n_values[i]
+  sample_means <- replicate(B, mean(rcauchy(n, location = 0, scale = 1)))
+  
+  results$simulated_mean[i] <- mean(sample_means)
+  results$simulated_sd[i]   <- sd(sample_means)
+  results$skewness[i]       <- skewness(sample_means)
+  results$kurtosis[i]       <- kurtosis(sample_means)
+}
+```
+
+## 4. Results Table
+
+```{r}
+#| label: results-table
+
+round(results, 4)
+```
+
+## 5. Histograms Across Sample Sizes
+
+```{r}
+#| label: histograms
+#| fig-height: 14
+
+par(mfrow = c(5, 2))
+
+for (i in seq_along(n_values)) {
+  n <- n_values[i]
+  sample_means <- replicate(B, mean(rcauchy(n, location = 0, scale = 1)))
+  
+  # Trim extreme outliers for plotting only so we can see the shape
+  trimmed <- sample_means[abs(sample_means) < quantile(abs(sample_means), 0.99)]
+  
+  hist(trimmed, breaks = 50, probability = TRUE,
+       main = paste("n =", n, "(trimmed for display)"),
+       xlab = "Sample Mean", col = "steelblue", border = "white")
+}
+
+par(mfrow = c(1, 1))
+```
+
+## 6. Q-Q Plots Across Sample Sizes
+
+```{r}
+#| label: qqplots
+#| fig-height: 14
+
+par(mfrow = c(5, 2))
+
+for (i in seq_along(n_values)) {
+  n <- n_values[i]
+  sample_means <- replicate(B, mean(rcauchy(n, location = 0, scale = 1)))
+  
+  qqnorm(sample_means, main = paste("Q-Q Plot: n =", n),
+         col = "steelblue", pch = 20, cex = 0.3)
+  qqline(sample_means, col = "red", lwd = 2)
+}
+
+par(mfrow = c(1, 1))
+```
+
+## 7. Why the CLT Fails for the Cauchy
+
+```{r}
+#| label: cauchy-vs-normal
+
+# Show that the sample mean of Cauchy does not converge
+# by plotting sample means for increasing n
+set.seed(1278)
+par(mfrow = c(1, 2))
+
+# Normal distribution - sample mean converges
+normal_means_n1   <- replicate(B, mean(rnorm(1)))
+normal_means_n100 <- replicate(B, mean(rnorm(100)))
+
+# Cauchy distribution - sample mean does not converge
+cauchy_means_n1   <- replicate(B, mean(rcauchy(1)))
+cauchy_means_n100 <- replicate(B, mean(rcauchy(100)))
+
+boxplot(list("Normal n=1" = normal_means_n1, 
+             "Normal n=100" = normal_means_n100),
+        main = "Normal: Mean Converges",
+        col = "steelblue", outline = FALSE)
+
+boxplot(list("Cauchy n=1" = cauchy_means_n1, 
+             "Cauchy n=100" = cauchy_means_n100),
+        main = "Cauchy: Mean Does Not Converge",
+        col = "tomato", outline = FALSE)
+
+par(mfrow = c(1, 1))
+```
+
+For the Normal distribution the spread of sample means shrinks dramatically as n increases from 1 to 100. For the Cauchy distribution the spread barely changes at all — the sample mean is just as unstable at n = 100 as it is at n = 1.
+
+## 8. Conclusion
+
+The Cauchy distribution is a case where the CLT fundamentally breaks down. The reason is that the CLT requires the population to have a finite variance. The Cauchy distribution violates this assumption — its tails are so heavy that variance is infinite.
+
+**My "normal enough" standard:**
+
+- Histogram is visually bell-shaped and symmetric
+- Q-Q plot points fall close to the reference line with no systematic curves
+- Skewness is between -0.5 and 0.5
+- Kurtosis is close to 3
+
+**Answer for Cauchy:** $$\boxed{\text{No value of } n \text{ works}}$$
+
+The sampling distribution of the Cauchy mean never converges to normality. Even at n = 1000 the Q-Q plots show severe deviation from the normal line and extreme outliers persist. This is not a failure of the simulation — it is the correct mathematical result. The CLT simply does not apply when the population has infinite variance.
+
+## 9. What Surprised Me
+
+The most striking result is visible in the boxplot comparison. For the Normal distribution increasing n from 1 to 100 dramatically tightens the spread of sample means — exactly what the CLT predicts. For the Cauchy the spread barely changes at all. No matter how many observations you average together, one extreme outlier can completely dominate the sample mean and pull it far from zero. This makes the Cauchy a powerful reminder that statistical rules of thumb always come with assumptions, and those assumptions matter.
