@@ -24,7 +24,7 @@ The project investigates whether the common "n = 30" rule of thumb holds univers
 | Six Sided Die | `sample()` | Discrete, symmetric | 10 |
 | Exponential | `rexp()` | Strong right skew | 30 |
 | Binomial Small | `rbinom()` | Extreme skew, discrete | 100 |
-| Cauchy | `rcauchy()` | Infinite variance | Never |
+| Cauchy | `rcauchy()` | No finite mean or variance | Never |
 
 ---
 
@@ -33,7 +33,7 @@ The project investigates whether the common "n = 30" rule of thumb holds univers
 - The n = 30 rule is **not universal** — it depends heavily on the population shape
 - Symmetric populations converge much faster than skewed ones
 - The Binomial Small distribution requires n = 100 before normality is achieved
-- The Cauchy distribution **never converges** because it violates the finite variance assumption of the CLT
+- The Cauchy distribution does not converge to a normal sampling distribution because its mean and variance are not defined
 
 ---
 
