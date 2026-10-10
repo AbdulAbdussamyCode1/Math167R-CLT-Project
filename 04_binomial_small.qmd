@@ -1,0 +1,147 @@
+---
+title: "CLT Project 1: Binomial Small"
+author: "Abdulwahab Abdussamy"
+format:
+  html:
+    toc: true
+    code-fold: true
+    theme: cosmo
+execute:
+  warning: false
+  message: false
+---
+
+## Overview
+
+The Binomial Small distribution uses parameters n=5 and p=0.10. This means we are counting the number of successes in 5 trials where each trial has only a 10% chance of success. This produces a highly skewed and very discrete distribution — most of the time you get 0 or 1 successes, and getting 4 or 5 successes is extremely rare. This is one of the hardest cases for the CLT.
+
+## Setup
+
+```{r}
+#| label: setup
+
+set.seed(1278)
+B <- 10000
+library(moments)
+```
+
+## 1. What Does the Population Look Like?
+
+```{r}
+#| label: population-plot
+
+x <- 0:5
+probs <- dbinom(x, size = 5, prob = 0.10)
+
+barplot(probs, names.arg = x,
+        col = "steelblue", border = "white",
+        main = "Binomial Small Population (n=5, p=0.10)",
+        xlab = "Number of Successes", ylab = "Probability")
+```
+
+The Binomial Small distribution is heavily right skewed and discrete. The vast majority of outcomes are 0 or 1 successes. Values of 3, 4, or 5 are extremely rare.
+
+**Theoretical mean:** n \* p = 5 \* 0.10 = 0.5\
+**Theoretical standard deviation:** sqrt(n \* p \* (1-p)) = sqrt(5 \* 0.10 \* 0.90) ≈ 0.6708
+
+## 2. My Prediction
+
+This is the most challenging required distribution after the Cauchy. The combination of heavy skew and extreme discreteness means I expect the CLT to need a very large sample size — probably much larger than n = 30 — before the sampling distribution looks approximately normal.
+
+## 3. Monte Carlo Simulation
+
+```{r}
+#| label: simulation
+
+n_values <- c(1, 2, 5, 10, 20, 30, 50, 100, 200, 500)
+
+results <- data.frame(
+  n              = n_values,
+  simulated_mean = NA,
+  simulated_sd   = NA,
+  theoretical_se = NA,
+  skewness       = NA,
+  kurtosis       = NA
+)
+
+for (i in seq_along(n_values)) {
+  n <- n_values[i]
+  sample_means <- replicate(B, mean(rbinom(n, size = 5, prob = 0.10)))
+  
+  results$simulated_mean[i] <- mean(sample_means)
+  results$simulated_sd[i]   <- sd(sample_means)
+  results$theoretical_se[i] <- sqrt(5 * 0.10 * 0.90) / sqrt(n)
+  results$skewness[i]       <- skewness(sample_means)
+  results$kurtosis[i]       <- kurtosis(sample_means)
+}
+```
+
+## 4. Results Table
+
+```{r}
+#| label: results-table
+
+round(results, 4)
+```
+
+## 5. Histograms Across Sample Sizes
+
+```{r}
+#| label: histograms
+#| fig-height: 14
+
+par(mfrow = c(5, 2))
+
+for (i in seq_along(n_values)) {
+  n <- n_values[i]
+  sample_means <- replicate(B, mean(rbinom(n, size = 5, prob = 0.10)))
+  
+  hist(sample_means, breaks = 50, probability = TRUE,
+       main = paste("n =", n),
+       xlab = "Sample Mean", col = "steelblue", border = "white")
+  
+  curve(dnorm(x, mean = 0.5, sd = sqrt(5 * 0.10 * 0.90) / sqrt(n)),
+        add = TRUE, col = "red", lwd = 2)
+}
+
+par(mfrow = c(1, 1))
+```
+
+## 6. Q-Q Plots Across Sample Sizes
+
+```{r}
+#| label: qqplots
+#| fig-height: 14
+
+par(mfrow = c(5, 2))
+
+for (i in seq_along(n_values)) {
+  n <- n_values[i]
+  sample_means <- replicate(B, mean(rbinom(n, size = 5, prob = 0.10)))
+  
+  qqnorm(sample_means, main = paste("Q-Q Plot: n =", n),
+         col = "steelblue", pch = 20, cex = 0.3)
+  qqline(sample_means, col = "red", lwd = 2)
+}
+
+par(mfrow = c(1, 1))
+```
+
+## 7. Conclusion
+
+The Binomial Small distribution is the hardest required case for the CLT. The extreme skew and discreteness of the population means the sampling distribution takes much longer to approach normality compared to the Normal, Six Sided Die, or even the Exponential.
+
+**My "normal enough" standard:**
+
+- Histogram is visually bell-shaped and symmetric
+- Q-Q plot points fall close to the reference line with no systematic curves
+- Skewness is between -0.5 and 0.5
+- Kurtosis is close to 3
+
+**Answer for Binomial Small:** $$\boxed{n = 100}$$
+
+By n = 100 the histogram is approximately bell shaped and the Q-Q plot is nearly linear. The skewness has dropped close to zero. This is dramatically larger than the n = 30 rule of thumb, which clearly does not hold for this distribution. The heavy skew and discreteness of the population require a much larger sample size before the CLT produces a normal-looking sampling distribution.
+
+## 8. What Surprised Me
+
+The most surprising thing is how long the discreteness lingers. Even at n = 20 or n = 30 the histogram still shows a slightly lumpy, jagged shape rather than a smooth bell curve. This is because the underlying population only takes integer values 0 through 5, and that discreteness takes a long time to wash out through averaging. This was a clear demonstration that the n = 30 rule of thumb is not universal — it depends heavily on the shape of the population you are sampling from.
