@@ -22,8 +22,6 @@ The Standard Normal distribution is our baseline case. Since the population is a
 
 set.seed(1278)
 B <- 10000
-
-# install.packages("moments") # run this once in console if needed
 library(moments)
 ```
 
@@ -55,21 +53,26 @@ Since the population is already normal, I expect the sampling distribution of th
 n_values <- c(1, 2, 5, 10, 20, 30, 50, 100)
 
 results <- data.frame(
-  n                = n_values,
-  simulated_mean   = NA,
-  simulated_sd     = NA,
-  theoretical_se   = NA,
-  skewness         = NA,
-  kurtosis         = NA
+  n              = n_values,
+  simulated_mean = NA,
+  simulated_sd   = NA,
+  theoretical_se = NA,
+  se_difference  = NA,
+  skewness       = NA,
+  kurtosis       = NA
 )
 
 for (i in seq_along(n_values)) {
   n <- n_values[i]
   sample_means <- replicate(B, mean(rnorm(n, mean = 0, sd = 1)))
   
+  sim_sd <- sd(sample_means)
+  theo_se <- 1 / sqrt(n)
+  
   results$simulated_mean[i]  <- mean(sample_means)
-  results$simulated_sd[i]    <- sd(sample_means)
-  results$theoretical_se[i]  <- 1 / sqrt(n)
+  results$simulated_sd[i]    <- sim_sd
+  results$theoretical_se[i]  <- theo_se
+  results$se_difference[i]   <- round(abs(sim_sd - theo_se), 5)
   results$skewness[i]        <- skewness(sample_means)
   results$kurtosis[i]        <- kurtosis(sample_means)
 }
@@ -83,7 +86,13 @@ for (i in seq_along(n_values)) {
 round(results, 4)
 ```
 
-## 5. Histograms Across Sample Sizes
+## 5. Simulated vs Theoretical Standard Error
+
+For the Standard Normal distribution with σ = 1, the theoretical SE = 1/√n. Looking at the results table the simulated standard deviation of the sample means matches the theoretical standard error almost exactly at every sample size. The `se_difference` column confirms this — the differences are extremely small, essentially rounding error.
+
+This is the ideal case. Because the population is already normal, both the shape and the spread of the sampling distribution behave exactly as theory predicts from the very start. This serves as our benchmark — every other distribution should eventually converge to this level of agreement between simulated and theoretical SE.
+
+## 6. Histograms Across Sample Sizes
 
 ```{r}
 #| label: histograms
@@ -106,7 +115,7 @@ for (i in seq_along(n_values)) {
 par(mfrow = c(1, 1))
 ```
 
-## 6. Q-Q Plots Across Sample Sizes
+## 7. Q-Q Plots Across Sample Sizes
 
 ```{r}
 #| label: qqplots
@@ -126,23 +135,21 @@ for (i in seq_along(n_values)) {
 par(mfrow = c(1, 1))
 ```
 
-## 7. Conclusion
+## 8. Conclusion
 
 The sampling distribution of the Standard Normal mean is approximately normal at every sample size tested, including n = 1. This is expected since we are sampling from a normal population — the mean of normal random variables is itself normal regardless of sample size.
 
-**My "normal enough" standard:**\
-I will consider a sampling distribution normal enough when:
+**My "normal enough" standard:**
 
-- The histogram is visually bell-shaped and symmetric
-- The Q-Q plot points fall close to the reference line with no systematic curves
+- Histogram is visually bell-shaped and symmetric
+- Q-Q plot points fall close to the reference line with no systematic curves
 - Skewness is between -0.5 and 0.5
 - Kurtosis is close to 3
 
-**Answer for Standard Normal:**\
-$$\boxed{n = 1}$$
+**Answer for Standard Normal:** $$\boxed{n = 1}$$
 
-The CLT is not needed here — the population is already normal, so the sampling distribution is normal at any sample size.
+The CLT is not needed here — the population is already normal, so the sampling distribution is normal at any sample size. The simulated SE matches the theoretical SE perfectly at every n, further confirming this.
 
-## 8. What Surprised Me
+## 9. What Surprised Me
 
-Even at n = 1, the sampling distribution is perfectly normal. This makes sense mathematically but seeing it confirmed visually reinforces why the Standard Normal serves as the ideal baseline — it shows us what "perfect normality" looks like so we can compare it against the skewed and heavy-tailed distributions later.
+Even at n = 1 the sampling distribution is perfectly normal and the simulated SE matches theory exactly. This makes sense mathematically but seeing it confirmed visually reinforces why the Standard Normal serves as the ideal baseline — it shows us what perfect normality looks like so we can compare it against the skewed and heavy-tailed distributions later.
