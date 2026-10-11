@@ -56,6 +56,7 @@ results <- data.frame(
   n              = n_values,
   simulated_mean = NA,
   simulated_sd   = NA,
+  theoretical_se = NA,
   skewness       = NA,
   kurtosis       = NA
 )
@@ -66,6 +67,7 @@ for (i in seq_along(n_values)) {
   
   results$simulated_mean[i] <- mean(sample_means)
   results$simulated_sd[i]   <- sd(sample_means)
+  results$theoretical_se[i] <- NA
   results$skewness[i]       <- skewness(sample_means)
   results$kurtosis[i]       <- kurtosis(sample_means)
 }
@@ -79,7 +81,15 @@ for (i in seq_along(n_values)) {
 round(results, 4)
 ```
 
-## 5. Histograms Across Sample Sizes
+## 5. Simulated vs Theoretical Standard Error
+
+Unlike every other distribution in this project, the Cauchy has no finite variance and therefore no finite theoretical standard error. The formula SE = σ/√n cannot be applied here because σ does not exist.
+
+Looking at the results table, the simulated standard deviation of the Cauchy sample means does not decrease as n increases the way it does for other distributions. For the Normal or Exponential, increasing n dramatically shrinks the spread of sample means — this is exactly what the SE formula predicts. For the Cauchy, the simulated SD remains large and unstable across all sample sizes because extreme outliers continue to dominate the sample mean no matter how large n gets.
+
+This is the most important finding for the Cauchy — it is not just that the shape fails to become normal, it is that the spread itself never stabilizes. The SE formula breaks down completely here, which is a direct consequence of the infinite variance assumption being violated.
+
+## 6. Histograms Across Sample Sizes
 
 ```{r}
 #| label: histograms
@@ -91,7 +101,6 @@ for (i in seq_along(n_values)) {
   n <- n_values[i]
   sample_means <- replicate(B, mean(rcauchy(n, location = 0, scale = 1)))
   
-  # Trim extreme outliers for plotting only so we can see the shape
   trimmed <- sample_means[abs(sample_means) < quantile(abs(sample_means), 0.99)]
   
   hist(trimmed, breaks = 50, probability = TRUE,
@@ -102,7 +111,7 @@ for (i in seq_along(n_values)) {
 par(mfrow = c(1, 1))
 ```
 
-## 6. Q-Q Plots Across Sample Sizes
+## 7. Q-Q Plots Across Sample Sizes
 
 ```{r}
 #| label: qqplots
@@ -122,30 +131,26 @@ for (i in seq_along(n_values)) {
 par(mfrow = c(1, 1))
 ```
 
-## 7. Why the CLT Fails for the Cauchy
+## 8. Why the CLT Fails for the Cauchy
 
 ```{r}
 #| label: cauchy-vs-normal
 
-# Show that the sample mean of Cauchy does not converge
-# by plotting sample means for increasing n
 set.seed(1278)
 par(mfrow = c(1, 2))
 
-# Normal distribution - sample mean converges
 normal_means_n1   <- replicate(B, mean(rnorm(1)))
 normal_means_n100 <- replicate(B, mean(rnorm(100)))
 
-# Cauchy distribution - sample mean does not converge
 cauchy_means_n1   <- replicate(B, mean(rcauchy(1)))
 cauchy_means_n100 <- replicate(B, mean(rcauchy(100)))
 
-boxplot(list("Normal n=1" = normal_means_n1, 
+boxplot(list("Normal n=1" = normal_means_n1,
              "Normal n=100" = normal_means_n100),
         main = "Normal: Mean Converges",
         col = "steelblue", outline = FALSE)
 
-boxplot(list("Cauchy n=1" = cauchy_means_n1, 
+boxplot(list("Cauchy n=1" = cauchy_means_n1,
              "Cauchy n=100" = cauchy_means_n100),
         main = "Cauchy: Mean Does Not Converge",
         col = "tomato", outline = FALSE)
@@ -153,9 +158,9 @@ boxplot(list("Cauchy n=1" = cauchy_means_n1,
 par(mfrow = c(1, 1))
 ```
 
-For the Normal distribution the spread of sample means shrinks dramatically as n increases from 1 to 100. For the Cauchy distribution the spread barely changes at all — the sample mean is just as unstable at n = 100 as it is at n = 1.
+For the Normal distribution the spread of sample means shrinks dramatically as n increases from 1 to 100 — exactly what the SE formula predicts. For the Cauchy distribution the spread barely changes at all. This directly demonstrates that the SE formula has no meaning for the Cauchy — increasing n does not stabilize the sample mean the way it does for distributions with finite variance.
 
-## 8. Conclusion
+## 9. Conclusion
 
 The Cauchy distribution is a case where the CLT fundamentally breaks down. The reason is that the CLT requires the population to have a finite variance. The Cauchy distribution violates this assumption — its tails are so heavy that variance is infinite.
 
@@ -168,8 +173,8 @@ The Cauchy distribution is a case where the CLT fundamentally breaks down. The r
 
 **Answer for Cauchy:** $$\boxed{\text{No value of } n \text{ works}}$$
 
-The sampling distribution of the Cauchy mean never converges to normality. Even at n = 1000 the Q-Q plots show severe deviation from the normal line and extreme outliers persist. This is not a failure of the simulation — it is the correct mathematical result. The CLT simply does not apply when the population has infinite variance.
+The sampling distribution of the Cauchy mean never converges to normality. Even at n = 1000 the Q-Q plots show severe deviation from the normal line and extreme outliers persist. Furthermore the simulated SD never stabilizes as n increases — unlike every other distribution in this project where the SE formula accurately predicted the spread. This is not a failure of the simulation — it is the correct mathematical result.
 
-## 9. What Surprised Me
+## 10. What Surprised Me
 
-The most striking result is visible in the boxplot comparison. For the Normal distribution increasing n from 1 to 100 dramatically tightens the spread of sample means — exactly what the CLT predicts. For the Cauchy the spread barely changes at all. No matter how many observations you average together, one extreme outlier can completely dominate the sample mean and pull it far from zero. This makes the Cauchy a powerful reminder that statistical rules of thumb always come with assumptions, and those assumptions matter.
+The most striking result is visible in the boxplot comparison. For the Normal distribution increasing n from 1 to 100 dramatically tightens the spread of sample means — exactly what the CLT predicts. For the Cauchy the spread barely changes at all. No matter how many observations you average together, one extreme outlier can completely dominate the sample mean. This also means the SE formula is completely useless for the Cauchy — a direct and dramatic illustration of what happens when the finite variance assumption is violated. Every other distribution in this project showed accurate SE predictions even before the shape became normal. The Cauchy shows neither.
