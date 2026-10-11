@@ -47,7 +47,7 @@ The project investigates whether the common "n = 30" rule of thumb holds univers
 | `04_binomial_small.qmd` | Binomial Small analysis |
 | `05_cauchy_distribution.qmd` | Cauchy analysis |
 | `final_summary.qmd` | Cross-distribution comparison and conclusions |
-| `ai_prompts.m` | Log of AI interactions and iteration process |
+| `ai_prompts.md` | Log of AI interactions and iteration process |
 
 ---
 
