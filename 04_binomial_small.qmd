@@ -60,6 +60,7 @@ results <- data.frame(
   simulated_mean = NA,
   simulated_sd   = NA,
   theoretical_se = NA,
+  se_difference  = NA,
   skewness       = NA,
   kurtosis       = NA
 )
@@ -68,9 +69,13 @@ for (i in seq_along(n_values)) {
   n <- n_values[i]
   sample_means <- replicate(B, mean(rbinom(n, size = 5, prob = 0.10)))
   
+  sim_sd <- sd(sample_means)
+  theo_se <- sqrt(5 * 0.10 * 0.90) / sqrt(n)
+  
   results$simulated_mean[i] <- mean(sample_means)
-  results$simulated_sd[i]   <- sd(sample_means)
-  results$theoretical_se[i] <- sqrt(5 * 0.10 * 0.90) / sqrt(n)
+  results$simulated_sd[i]   <- sim_sd
+  results$theoretical_se[i] <- theo_se
+  results$se_difference[i]  <- round(abs(sim_sd - theo_se), 5)
   results$skewness[i]       <- skewness(sample_means)
   results$kurtosis[i]       <- kurtosis(sample_means)
 }
@@ -84,7 +89,13 @@ for (i in seq_along(n_values)) {
 round(results, 4)
 ```
 
-## 5. Histograms Across Sample Sizes
+## 5. Simulated vs Theoretical Standard Error
+
+For the Binomial Small distribution the theoretical SE = sqrt(5 \* 0.10 \* 0.90) / sqrt(n) ≈ 0.6708 / sqrt(n). Looking at the results table the simulated standard deviation tracks the theoretical standard error closely at every sample size tested. The `se_difference` column shows the gap remains small even at small values of n where the shape is still far from normal.
+
+This is a striking finding — even when the sampling distribution is visibly skewed and lumpy at small n, the standard error formula is already giving accurate predictions. This shows that the CLT's prediction about the spread of sample means is more robust than its prediction about the shape. The shape takes much longer to normalize for this distribution than the spread does.
+
+## 6. Histograms Across Sample Sizes
 
 ```{r}
 #| label: histograms
@@ -107,7 +118,7 @@ for (i in seq_along(n_values)) {
 par(mfrow = c(1, 1))
 ```
 
-## 6. Q-Q Plots Across Sample Sizes
+## 7. Q-Q Plots Across Sample Sizes
 
 ```{r}
 #| label: qqplots
@@ -127,7 +138,7 @@ for (i in seq_along(n_values)) {
 par(mfrow = c(1, 1))
 ```
 
-## 7. Conclusion
+## 8. Conclusion
 
 The Binomial Small distribution is the hardest required case for the CLT. The extreme skew and discreteness of the population means the sampling distribution takes much longer to approach normality compared to the Normal, Six Sided Die, or even the Exponential.
 
@@ -140,8 +151,8 @@ The Binomial Small distribution is the hardest required case for the CLT. The ex
 
 **Answer for Binomial Small:** $$\boxed{n = 100}$$
 
-By n = 100 the histogram is approximately bell shaped and the Q-Q plot is nearly linear. The skewness has dropped close to zero. This is dramatically larger than the n = 30 rule of thumb, which clearly does not hold for this distribution. The heavy skew and discreteness of the population require a much larger sample size before the CLT produces a normal-looking sampling distribution.
+By n = 100 the histogram is approximately bell shaped, the Q-Q plot is nearly linear, skewness has dropped close to zero, and the simulated SD matches the theoretical SE of 0.6708/sqrt(100) ≈ 0.067 closely. This is dramatically larger than the n = 30 rule of thumb, which clearly does not hold for this distribution.
 
-## 8. What Surprised Me
+## 9. What Surprised Me
 
-The most surprising thing is how long the discreteness lingers. Even at n = 20 or n = 30 the histogram still shows a slightly lumpy, jagged shape rather than a smooth bell curve. This is because the underlying population only takes integer values 0 through 5, and that discreteness takes a long time to wash out through averaging. This was a clear demonstration that the n = 30 rule of thumb is not universal — it depends heavily on the shape of the population you are sampling from.
+The most surprising thing is how long the discreteness lingers. Even at n = 20 or n = 30 the histogram still shows a slightly lumpy, jagged shape rather than a smooth bell curve. This is because the underlying population only takes integer values 0 through 5, and that discreteness takes a long time to wash out through averaging. This was a clear demonstration that the n = 30 rule of thumb is not universal. Also notable is that the SE formula was accurate throughout — even when the shape was still far from normal at small n the spread was already being predicted correctly by theory.
