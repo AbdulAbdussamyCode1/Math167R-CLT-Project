@@ -57,6 +57,7 @@ results <- data.frame(
   simulated_mean = NA,
   simulated_sd   = NA,
   theoretical_se = NA,
+  se_difference  = NA,
   skewness       = NA,
   kurtosis       = NA
 )
@@ -65,9 +66,13 @@ for (i in seq_along(n_values)) {
   n <- n_values[i]
   sample_means <- replicate(B, mean(sample(1:6, size = n, replace = TRUE)))
   
+  sim_sd <- sd(sample_means)
+  theo_se <- sqrt(35/12) / sqrt(n)
+  
   results$simulated_mean[i] <- mean(sample_means)
-  results$simulated_sd[i]   <- sd(sample_means)
-  results$theoretical_se[i] <- sqrt(35/12) / sqrt(n)
+  results$simulated_sd[i]   <- sim_sd
+  results$theoretical_se[i] <- theo_se
+  results$se_difference[i]  <- round(abs(sim_sd - theo_se), 5)
   results$skewness[i]       <- skewness(sample_means)
   results$kurtosis[i]       <- kurtosis(sample_means)
 }
@@ -81,7 +86,13 @@ for (i in seq_along(n_values)) {
 round(results, 4)
 ```
 
-## 5. Histograms Across Sample Sizes
+## 5. Simulated vs Theoretical Standard Error
+
+For the Six Sided Die the theoretical SE = sqrt(35/12) / sqrt(n) ≈ 1.708 / sqrt(n). Looking at the results table the simulated standard deviation of the sample means tracks the theoretical standard error very closely at every sample size. The `se_difference` column shows the gap between the two stays consistently small across all values of n.
+
+This is an important result — even though the Six Sided Die is discrete and non-normal, the CLT's prediction about the standard error holds accurately from the very beginning. The spread of the sampling distribution is well-predicted by theory long before the shape becomes fully normal. This mirrors what we saw with the Standard Normal and suggests that the SE formula is robust to the shape of the population.
+
+## 6. Histograms Across Sample Sizes
 
 ```{r}
 #| label: histograms
@@ -104,7 +115,7 @@ for (i in seq_along(n_values)) {
 par(mfrow = c(1, 1))
 ```
 
-## 6. Q-Q Plots Across Sample Sizes
+## 7. Q-Q Plots Across Sample Sizes
 
 ```{r}
 #| label: qqplots
@@ -124,7 +135,7 @@ for (i in seq_along(n_values)) {
 par(mfrow = c(1, 1))
 ```
 
-## 7. Conclusion
+## 8. Conclusion
 
 The Six Sided Die sampling distribution converges to normality fairly quickly due to its symmetry. Even though the population is discrete and non-normal, the averaging process smooths things out rapidly.
 
@@ -137,8 +148,8 @@ The Six Sided Die sampling distribution converges to normality fairly quickly du
 
 **Answer for Six Sided Die:** $$\boxed{n = 10}$$
 
-By n = 10 the histogram is clearly bell-shaped, the Q-Q plot is approximately linear, and skewness is close to zero. The symmetry of the original distribution means the CLT kicks in much faster than it would for a skewed population.
+By n = 10 the histogram is clearly bell-shaped, the Q-Q plot is approximately linear, skewness is close to zero, and the simulated SE matches the theoretical SE of sqrt(35/12)/sqrt(10) ≈ 0.540 closely. The symmetry of the original distribution means the CLT kicks in much faster than it would for a skewed population.
 
-## 8. What Surprised Me
+## 9. What Surprised Me
 
-Even at n = 2, the distribution of sample means already starts losing its uniform shape and showing a triangular bump in the middle. This makes sense — when you average two dice rolls, extreme values (both 1s or both 6s) become less likely than middle values. The CLT is already working at just n = 2, which was faster than I expected for a non-normal population.
+Even at n = 2 the distribution of sample means already starts losing its uniform shape and showing a triangular bump in the middle. This makes sense — when you average two dice rolls, extreme values (both 1s or both 6s) become less likely than middle values. The CLT is already working at just n = 2, which was faster than I expected for a non-normal population. Additionally the SE formula was accurate from the very first sample size, confirming that the spread converges before the shape does.
