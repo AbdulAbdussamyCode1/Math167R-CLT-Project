@@ -57,6 +57,7 @@ results <- data.frame(
   simulated_mean = NA,
   simulated_sd   = NA,
   theoretical_se = NA,
+  se_difference  = NA,
   skewness       = NA,
   kurtosis       = NA
 )
@@ -65,9 +66,13 @@ for (i in seq_along(n_values)) {
   n <- n_values[i]
   sample_means <- replicate(B, mean(rexp(n, rate = 1)))
   
+  sim_sd <- sd(sample_means)
+  theo_se <- 1 / sqrt(n)
+  
   results$simulated_mean[i] <- mean(sample_means)
-  results$simulated_sd[i]   <- sd(sample_means)
-  results$theoretical_se[i] <- 1 / sqrt(n)
+  results$simulated_sd[i]   <- sim_sd
+  results$theoretical_se[i] <- theo_se
+  results$se_difference[i]  <- round(abs(sim_sd - theo_se), 5)
   results$skewness[i]       <- skewness(sample_means)
   results$kurtosis[i]       <- kurtosis(sample_means)
 }
@@ -81,7 +86,15 @@ for (i in seq_along(n_values)) {
 round(results, 4)
 ```
 
-## 5. Histograms Across Sample Sizes
+## 5. Simulated vs Theoretical Standard Error
+
+One of the key predictions of the CLT is that the standard error of the sample mean should equal σ/√n. For the Exponential distribution with λ=1, σ=1, so the theoretical SE = 1/√n.
+
+Looking at the results table, the simulated standard deviation of the sample means closely matches the theoretical standard error at every sample size tested. At n=1 both are approximately 1.0, and at n=100 both are approximately 0.10. The `se_difference` column shows the absolute difference between the two — it stays very small across all values of n, confirming that the CLT's prediction about the standard error holds even for a skewed population.
+
+This is an important finding: even when the sampling distribution is not yet normally shaped at small n, the standard error formula still produces accurate predictions. The shape takes longer to normalize than the spread does.
+
+## 6. Histograms Across Sample Sizes
 
 ```{r}
 #| label: histograms
@@ -104,7 +117,7 @@ for (i in seq_along(n_values)) {
 par(mfrow = c(1, 1))
 ```
 
-## 6. Q-Q Plots Across Sample Sizes
+## 7. Q-Q Plots Across Sample Sizes
 
 ```{r}
 #| label: qqplots
@@ -124,7 +137,7 @@ for (i in seq_along(n_values)) {
 par(mfrow = c(1, 1))
 ```
 
-## 7. Conclusion
+## 8. Conclusion
 
 The Exponential distribution clearly shows the CLT working gradually. At small sample sizes like n = 1 and n = 2 the sampling distribution is visibly right skewed, matching the shape of the population. As n increases the skewness decreases and the distribution becomes more symmetric and bell shaped.
 
@@ -137,8 +150,60 @@ The Exponential distribution clearly shows the CLT working gradually. At small s
 
 **Answer for Exponential:** $$\boxed{n = 30}$$
 
-By n = 30 the histogram is approximately bell shaped, the Q-Q plot is nearly linear, and skewness has dropped close to zero. This is notably larger than what was needed for the Standard Normal or Six Sided Die, which makes sense given the strong right skew of the Exponential population.
+By n = 30 the histogram is approximately bell shaped, the Q-Q plot is nearly linear, skewness has dropped close to zero, and the simulated standard deviation matches the theoretical SE of 1/√30 ≈ 0.183 closely. This is notably larger than what was needed for the Standard Normal or Six Sided Die, which makes sense given the strong right skew of the Exponential population.
 
-## 8. What Surprised Me
+## 9. What Surprised Me
 
 The most striking thing is how visible the transition is. At n = 5 the distribution still looks clearly skewed, but by n = 20 it is already starting to look bell shaped. Watching the red normal curve gradually align with the histogram across sample sizes makes the CLT feel real rather than just a theoretical result. The n = 30 rule of thumb actually holds reasonably well here, which was not guaranteed given how skewed the Exponential population is.
+
+Also notable is that the standard error formula was accurate at every sample size — even when the shape was still skewed. This shows that the CLT's prediction about spread is more robust than its prediction about shape.
+
+## 10. Reproducibility Experiment
+
+```{r}
+#| label: reproducibility-experiment
+
+sample_means_original <- {set.seed(1278); replicate(B, mean(rexp(30, rate = 1)))}
+sample_means_new      <- {set.seed(9999); replicate(B, mean(rexp(30, rate = 1)))}
+
+comparison <- data.frame(
+  Metric = c("Mean", "Std Dev", "Skewness", "Kurtosis"),
+  Seed_1278 = c(
+    round(mean(sample_means_original), 4),
+    round(sd(sample_means_original), 4),
+    round(skewness(sample_means_original), 4),
+    round(kurtosis(sample_means_original), 4)
+  ),
+  Seed_9999 = c(
+    round(mean(sample_means_new), 4),
+    round(sd(sample_means_new), 4),
+    round(skewness(sample_means_new), 4),
+    round(kurtosis(sample_means_new), 4)
+  )
+)
+
+knitr::kable(comparison, caption = "Comparison of Results Across Two Different Seeds")
+```
+
+```{r}
+#| label: reproducibility-plots
+#| fig-height: 4
+
+par(mfrow = c(1, 2))
+
+hist(sample_means_original, breaks = 50, probability = TRUE,
+     main = "Seed 1278", xlab = "Sample Mean",
+     col = "steelblue", border = "white")
+curve(dnorm(x, mean = 1, sd = 1/sqrt(30)), add = TRUE, col = "red", lwd = 2)
+
+hist(sample_means_new, breaks = 50, probability = TRUE,
+     main = "Seed 9999", xlab = "Sample Mean",
+     col = "darkgreen", border = "white")
+curve(dnorm(x, mean = 1, sd = 1/sqrt(30)), add = TRUE, col = "red", lwd = 2)
+
+par(mfrow = c(1, 1))
+```
+
+The exact numbers shifted slightly between the two seeds — the mean, standard deviation, skewness and kurtosis all changed by small amounts. However the scientific conclusion did not change at all. Both seeds produce a sampling distribution that is approximately bell-shaped at n = 30, with skewness close to zero and kurtosis close to 3.
+
+This is an important property of Monte Carlo simulation. With B = 10,000 repetitions the results are stable enough that changing the seed does not change your conclusions — it only introduces small random fluctuations in the exact numbers. This is why using a large B is important: it makes your conclusions robust to the specific random seed you choose.
