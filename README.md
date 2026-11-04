@@ -14,6 +14,17 @@ This project uses Monte Carlo simulation in R to stress-test the Central Limit T
 
 The project investigates whether the common "n = 30" rule of thumb holds universally, and what happens when the assumptions behind the CLT are violated.
 
+## Rendered Reports
+
+These links open the rendered HTML reports through GitHub Pages:
+
+- [Final Summary](https://abdulabdussamycode1.github.io/Math167R-CLT-Project/final_summary.html)
+- [Standard Normal](https://abdulabdussamycode1.github.io/Math167R-CLT-Project/01_standard_normal.html)
+- [Six-Sided Die](https://abdulabdussamycode1.github.io/Math167R-CLT-Project/02_six_sided_die.html)
+- [Exponential](https://abdulabdussamycode1.github.io/Math167R-CLT-Project/03_exponential.html)
+- [Binomial Small](https://abdulabdussamycode1.github.io/Math167R-CLT-Project/04_binomial_small.html)
+- [Cauchy](https://abdulabdussamycode1.github.io/Math167R-CLT-Project/05_cauchy_distribution.html)
+
 ---
 
 ## Distributions Investigated
