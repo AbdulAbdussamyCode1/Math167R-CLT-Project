@@ -26,6 +26,12 @@ Before presenting results I want to clearly state the standard I used consistent
 
 I applied this same standard to every distribution so that my conclusions are consistent and comparable.
 
+### How I Defined “Approximately Normal”
+
+For this project, I defined a sampling distribution as approximately normal using several criteria. First, the histogram should be unimodal and roughly symmetric. Second, the Q-Q plot should be approximately linear without strong curvature. Third, the skewness should be reasonably close to zero, using an absolute skewness cutoff of 0.5.
+
+I used these criteria together rather than relying on only one graph. The minimum sample size is defined as the smallest consecutive value of n for which these criteria are satisfied, while the previous value of n does not satisfy them.
+
 ## Setup
 
 ```{r}
